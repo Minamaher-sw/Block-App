@@ -96,4 +96,14 @@ arraySchema.validate(arrayTask)
                             })
                             .catch(err=> console.log(err.errors[0]))
 
-// asunc validation
+// async validation
+const asyncSchema =yup.object({
+    username:yup
+                .string()
+                .trim()
+                .required()
+                .test("checkusername","user is exist",async (value)=>{
+                    const exists =await checkUserNameFromDb(value);
+                    return !exists ;
+                })
+})
