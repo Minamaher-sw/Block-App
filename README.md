@@ -54,7 +54,7 @@ cd Block-App
 
 # Install dependencies
 npm install
-
+```
 Configuration
 Create a .env file in the root directory with the following:
 
