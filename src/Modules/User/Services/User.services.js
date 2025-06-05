@@ -1,51 +1,53 @@
-import User from "../../../../DB/models/User/user.model.js"
-
-const signup=()=>{
-    async (req,res)=>{
+import {User} from "../../../DB/models/User/user.model.js";
+import bcrypt from 'bcryptjs';
+import  jwt from 'jsonwebtoken';
+const signup= async (req,res)=>{
         try{
-            const createdUser =await User.create(req.body);
+            console.log("hi");
+            const { username, email, password } = req.body;
+            const createdUser =await User.create({ username, email, password })
             res.send(createdUser)
         }
         catch(err)
         {
-            res.status(500).json({message:"internal server error"});
+            res.status(500).json({message:"internal server error" ,err:err});
         }
     }
-}
-const userLogin =()=>{
-    async (req ,res)=>{
-        try{
-            const {username ,password}=req.body ;
-            const user =await User.find({username : username}) ;
-            if(user){
-                const hash =user.password ;
-                const valid =bcrypt.compareSync(password,hash);
-                if(valid){
-                    const Token = jwt.sign(
-                        {
-                            username:user.username,
-                            id :user._id
-                        },
-                        process.env.JWT_SECRET,
-                        {expiresIn:"1d"}
-                    )
-                    return Token ;
-                }
-                else{
-                    throw "invalid login "
-                }
-            }
-            else{
-                    throw "username or password invalid" 
-            }
+const userLogin = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(401).json({ message: "Invalid username or password" });
         }
-        catch(err){
-            res.status(500).json({message :"internal server error"});
+
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) {
+            return res.status(401).json({ message: "Invalid username or password" });
         }
+
+        const token = jwt.sign(
+            {
+                username: user.username,
+                id: user._id,
+                role: user.role
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+
+        res.status(200).json({
+            message: "Login successful",
+            token
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error", error: err.message || err });
     }
-}
-const getAllUser =()=>{
-    async (req,res)=>{
+};
+const getAllUser =async (req,res)=>{
         try{
             const allUsers =await User.find();
             res.send(allUsers)
@@ -55,10 +57,8 @@ const getAllUser =()=>{
             res.status(500).json({message:"internal server error"});
         }
     }
-}
 
-const getUserById =()=>{
-    async (req,res)=>{
+const getUserById =async (req,res)=>{
         const userId = req.params.id;
         try{
             const user =await User.find({_id:userId});
@@ -75,14 +75,11 @@ const getUserById =()=>{
             res.status(500).json({message:"internal server error"});
         }
     }
-}
-
-const updateUser =()=>{
-    try{
-        async (req ,res )=>{
-        const userId = req.params.id;
+const updateUser =async (req ,res )=>{
+        try{
+            const userId = req.params.id;
         const {username , email , password} =req.body;
-        const user =req.user ;
+        const user =await User.findOne({_id:userId})
         user.username =username ? username : user.username ;
         user.email =email ? email : user.email ;
         user.password =password ? password : user.password ;
@@ -94,24 +91,22 @@ const updateUser =()=>{
             )
             res.send(updateuser_v);
         }
-    }
+        
     catch(err){
         res.status(500).json({message:"internal server error"});
     }
 }
 
-const deleteUser =()=>{
+const deleteUser =async (req,res)=>{
     try{
-        async (req,res)=>{
             const userId =req.params.id;
             await User.deleteOne({_id :userId});
             res.send("User Is Delelted")
         }
-    }
-    catch(err){
+        catch(err){
         res.status(500).json({message:"internal server error"});
     }
-}
+    }
 
 export{
     signup,
