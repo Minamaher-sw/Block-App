@@ -1,58 +1,65 @@
 import mongoose from "mongoose";
-const { Schema } = mongoose;
 import bcrypt from "bcryptjs";
+
+const { Schema } = mongoose;
+
 const userSchema = new Schema({
     username: {
         type: String,
-        minLength:[3,"length not valid"],
-        validate:{
-            validator:function(value){
-                return value.length <= 30 ;
-            },
-            // message :`title "${props.value}" is too long. max length is 100 characters.`
-            message: props => `Content "${props.value}" is too long. Max length is 30 characters.`
-        }
+        required: [true, "Username is required"],
+        minLength: [3, "Username must be at least 3 characters"],
+        maxLength: [30, "Username must be at most 30 characters"],
     },
     email: {
         type: String,
-        required: true,
+        required: [true, "Email is required"],
+        lowercase: true,
         unique: true,
-        trim: true,
-    },
-    password:{
-        type : String,
-        minLength:[6,"length not valid"],
-        validate:{
-            validator:function(value){
-                return value.length <= 100 ;
-            },
-            // message :`title "${props.value}" is too long. max length is 100 characters.`
-            message: props => `Content "${props.value}" is too long. Max length is 50 characters.`
+        validate: {
+        validator: function (value) {
+            // Basic email pattern
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        },
+        message: props => `"${props.value}" is not a valid email address`
         }
+    },
+    password: {
+        type: String,
+        required: [true, "Password is required"],
+        minLength: [6, "Password must be at least 6 characters"],
+        maxLength: [100, "Password must be at most 100 characters"]
     },
     role: {
         type: String,
         enum: {
-            values: ["user", "admin"],
-            message: "{VALUE} is not supported",
+        values: ["user", "admin"],
+        message: "{VALUE} is not supported"
         },
-        default: "user",
-    },
-},{ timestamps: true },{
-    // adding tojson 
-    toJSON :{
-        transform:function(doc,ret,options){
-            delete ret.password ;
-            delete ret.role;
+        default: "user"
+    }
+    }, {
+    timestamps: true,
+    toJSON: {
+        transform: function (doc, ret) {
+        delete ret.password;
+        delete ret.role;
+        delete ret.__v;
+        return ret;
         }
     }
-});
-// hashing for password 
-userSchema.pre("save",function(){
-    const hash =bcrypt.hashSync(this.password , 8);
-    this.password =hash ;
-})
+    });
 
+    // Hash password before saving
+    userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
+    try {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
 
 const User = mongoose.model("User", userSchema);
-export default User;
+export { User };

@@ -1,11 +1,12 @@
-import validateRequest from "../../../../middleware/Joi_validate/joi.midlleWare.validate.js";
-import { updateUserSchema, userJOISchema } from "../../../../middleware/Joi_validate/User/User.data.joi";
+import validateRequest from "../../../middleware/Joi_validate/joi.midlleWare.validate.js";
+import { updateUserSchema, userJOISchema } from "../../../middleware/Joi_validate/User/User.data.joi.js";
 
 export const signupValidate =()=>{
-    validateRequest(userJOISchema);
+
+    return  validateRequest(userJOISchema);
 }
 
 export const updateUserValidate=()=>
 {
-    validateRequest(updateUserSchema);
+    return validateRequest(updateUserSchema);
 }
