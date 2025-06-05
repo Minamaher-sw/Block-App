@@ -32,5 +32,5 @@ const postsSchema =new Schema({
     }
 },{ timestamps: true })
 
-const Posts =mongoose.model("Post",postsSchema);
-export default Posts ;
+const Post =mongoose.model("Post",postsSchema);
+export default Post ;
